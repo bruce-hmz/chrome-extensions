@@ -9,7 +9,8 @@
   function epochToDate(sec) {
     const n = Number(sec);
     if (!Number.isFinite(n) || n <= 0) return '';
-    return new Date(n * 1000).toISOString().slice(0, 10);
+    // 站点按 UTC+8 显示日期；加 8h 后取 ISO 日期，等价于 UTC+8 墙钟日期
+    return new Date(n * 1000 + 8 * 3600 * 1000).toISOString().slice(0, 10);
   }
 
   function csvCell(v) {

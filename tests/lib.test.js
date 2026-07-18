@@ -1,9 +1,9 @@
 const BC = require('../src/lib.js');
 
 describe('epochToDate', () => {
-  it('Unix 秒转 UTC YYYY-MM-DD', () => {
+  it('Unix 秒转 UTC+8 YYYY-MM-DD', () => {
     expect(BC.epochToDate(1771250711)).toBe('2026-02-16');
-    expect(BC.epochToDate(1775771812)).toBe('2026-04-09');
+    expect(BC.epochToDate(1775685412)).toBe('2026-04-09');
   });
   it('非法值返回空串', () => {
     expect(BC.epochToDate(0)).toBe('');
