@@ -111,7 +111,38 @@
     return null;
   }
 
-  const BC = { CSV_HEADERS, epochToDate, rowsToCsv, dedupe, extractRow, extractPage, findNextButton };
+  function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+  // 点击下一页后，等表格真正加载完成。SPA 翻页会经过「骨架/部分渲染 → 满页」过程，
+  // 若只在首行一变化就返回，会在表格没加载完时误判，抓到空/旧数据。
+  // 因此：先等首行出现新 URL（新数据到达），再等连续 STABLE_POLLS 次轮询
+  // 「行数+首行」都不变，才视为加载完成。
+  async function waitForNextPage(prevFirstKey, timeoutMs, isCancelled) {
+    const start = Date.now();
+    const POLL_MS = 200;
+    const STABLE_POLLS = 3;
+    let seen = false;
+    let stableCount = 0;
+    let lastSig = '';
+    while (Date.now() - start < timeoutMs) {
+      if (isCancelled && isCancelled()) return false;
+      await sleep(POLL_MS);
+      const { rows } = extractPage();
+      const first = rows.length ? rows[0].sourceUrl : '';
+      const sig = rows.length + '|' + first;
+      if (!seen) {
+        if (rows.length && first && first !== prevFirstKey) { seen = true; lastSig = sig; stableCount = 0; }
+      } else if (sig === lastSig) {
+        if (++stableCount >= STABLE_POLLS) return true;
+      } else {
+        stableCount = 0;
+        lastSig = sig;
+      }
+    }
+    return false;
+  }
+
+  const BC = { CSV_HEADERS, epochToDate, rowsToCsv, dedupe, extractRow, extractPage, findNextButton, waitForNextPage };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = BC;
   root.BC = BC;

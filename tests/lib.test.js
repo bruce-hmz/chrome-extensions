@@ -139,3 +139,53 @@ describe('findNextButton', () => {
     expect(BC.findNextButton(document)).toBeNull();
   });
 });
+
+// waitForNextPage：点击下一页后等表格真正加载完成。
+// 真实 SPA 点击后会经过「骨架/部分渲染 → 满页」过程；只在首行变化时立刻返回
+// 会在表格还没加载完就误判，导致抓到空/旧数据。必须等「连续稳定」才返回。
+describe('waitForNextPage', () => {
+  function setTable(firstUrl, rowCount) {
+    let html = '<div data-test-table="backlinks"><span data-test-report-title-total="">900</span>';
+    for (let i = 0; i < rowCount; i++) {
+      const url = i === 0 ? firstUrl : 'row-' + i;
+      html += '<div data-test-tbody-tr="" role="row"><div name="source"><a data-test-source-url="' + url + '">x</a></div></div>';
+    }
+    html += '</div>';
+    document.body.innerHTML = html;
+  }
+  const firstUrl = () => {
+    const el = document.querySelector('[data-test-source-url]');
+    return el ? el.getAttribute('data-test-source-url') : '';
+  };
+  const rowCount = () => document.querySelectorAll('[data-test-tbody-tr]').length;
+
+  it('骨架/部分渲染阶段不返回，等满页稳定后才返回', async () => {
+    setTable('p1', 100);
+    const p = BC.waitForNextPage('p1', 4000, () => false);
+    setTimeout(() => setTable('', 1), 100);            // 骨架（首行空）
+    setTimeout(() => setTable('p2', 40), 300);          // 部分渲染
+    setTimeout(() => setTable('p2-final', 100), 600);   // 满页
+    const t0 = Date.now();
+    const ok = await p;
+    const elapsed = Date.now() - t0;
+    expect(ok).toBe(true);
+    expect(elapsed).toBeGreaterThan(1000);              // 不能在 100ms 骨架出现即返回
+    expect(firstUrl()).toBe('p2-final');
+    expect(rowCount()).toBe(100);
+  });
+
+  it('超时未稳定返回 false', async () => {
+    setTable('p1', 100);
+    // 表格恒不变（永远停在 page1）
+    const ok = await BC.waitForNextPage('p1', 500, () => false);
+    expect(ok).toBe(false);
+  });
+
+  it('isCancelled 为真时中止', async () => {
+    setTable('p1', 100);
+    let cancelled = false;
+    setTimeout(() => { cancelled = true; }, 150);
+    const ok = await BC.waitForNextPage('p1', 4000, () => cancelled);
+    expect(ok).toBe(false);
+  });
+});
