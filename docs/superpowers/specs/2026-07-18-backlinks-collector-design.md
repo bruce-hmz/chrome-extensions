@@ -66,7 +66,7 @@ content → popup（经 `chrome.runtime.sendMessage`）：
 
 - 重定向行（无 `[data-test-source-title]`）→ 源标题留空，URL 照取。
 - target 同时有 redirect-url 与 target-url → 取 target-url（最终目标）。
-- 日期一律用 `data-test-timestamp` 属性（秒级 epoch），忽略「7 天前」相对文本。
+- 日期一律用 `data-test-timestamp` 属性（秒级 epoch）转 **UTC+8（Asia/Shanghai）** `YYYY-MM-DD`，与站点显示一致；忽略「7 天前」相对文本。
 - 跨页去重：key = `源URL +  + 目标URL`，兜底防重复。
 
 ## 翻页循环
