@@ -189,3 +189,27 @@ describe('waitForNextPage', () => {
     expect(ok).toBe(false);
   });
 });
+
+describe('rowsToCsv 列顺序', () => {
+  const row = { ascore: '1', sourceTitle: 't', sourceUrl: 'u', externalLinks: '2', internalLinks: '3', anchor: 'a', targetUrl: 'v', firstSeen: '2026-01-01', lastSeen: '2026-01-02' };
+
+  it('COLUMNS 暴露 9 个 key（默认顺序）', () => {
+    expect(BC.COLUMNS.map((c) => c.key)).toEqual(
+      ['ascore', 'sourceTitle', 'sourceUrl', 'externalLinks', 'internalLinks', 'anchor', 'targetUrl', 'firstSeen', 'lastSeen'],
+    );
+  });
+
+  it('不传 columns 时按默认 9 列顺序输出', () => {
+    const lines = BC.rowsToCsv([row]).slice(1).split('\r\n');
+    expect(lines[0]).toBe('"页面AS","源页面标题","源页面URL","外部链接","内部链接","锚文本","目标URL","首次发现","上次发现"');
+  });
+
+  it('按给定 columns 子集+顺序输出表头与字段', () => {
+    // 显式构造「非默认顺序」(sourceUrl 在前, ascore 在后)，证明顺序被尊重
+    const find = (k) => BC.COLUMNS.find((c) => c.key === k);
+    const cols = [find('sourceUrl'), find('ascore')];
+    const lines = BC.rowsToCsv([row], cols).slice(1).split('\r\n');
+    expect(lines[0]).toBe('"源页面URL","页面AS"');
+    expect(lines[1]).toBe('"u","1"');
+  });
+});

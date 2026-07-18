@@ -1,10 +1,20 @@
 (function (root) {
   'use strict';
 
-  const CSV_HEADERS = [
-    '页面AS', '源页面标题', '源页面URL', '外部链接', '内部链接',
-    '锚文本', '目标URL', '首次发现', '上次发现',
+  // 9 个导出列：key=行字段，label=结果表表头(短)，header=CSV 表头(全称)。
+  // 默认顺序即此数组顺序；popup 可拖拽重排，并把重排后的 columns 传给 rowsToCsv。
+  const COLUMNS = [
+    { key: 'ascore', label: 'AS', header: '页面AS' },
+    { key: 'sourceTitle', label: '源标题', header: '源页面标题' },
+    { key: 'sourceUrl', label: '源URL', header: '源页面URL' },
+    { key: 'externalLinks', label: '外部', header: '外部链接' },
+    { key: 'internalLinks', label: '内部', header: '内部链接' },
+    { key: 'anchor', label: '锚文本', header: '锚文本' },
+    { key: 'targetUrl', label: '目标URL', header: '目标URL' },
+    { key: 'firstSeen', label: '首次', header: '首次发现' },
+    { key: 'lastSeen', label: '上次', header: '上次发现' },
   ];
+  const CSV_HEADERS = COLUMNS.map((c) => c.header);
 
   function epochToDate(sec) {
     const n = Number(sec);
@@ -18,13 +28,12 @@
     return '"' + s.replace(/"/g, '""') + '"';
   }
 
-  function rowsToCsv(rows) {
-    const lines = [CSV_HEADERS.map(csvCell).join(',')];
+  // columns 可选；不传用默认 COLUMNS（9 列）。传空数组则只有 BOM。
+  function rowsToCsv(rows, columns) {
+    const cols = columns || COLUMNS;
+    const lines = [cols.map((c) => csvCell(c.header)).join(',')];
     for (const r of rows) {
-      lines.push([
-        r.ascore, r.sourceTitle, r.sourceUrl, r.externalLinks,
-        r.internalLinks, r.anchor, r.targetUrl, r.firstSeen, r.lastSeen,
-      ].map(csvCell).join(','));
+      lines.push(cols.map((c) => csvCell(r[c.key])).join(','));
     }
     return '\uFEFF' + lines.join('\r\n');
   }
@@ -142,7 +151,7 @@
     return false;
   }
 
-  const BC = { CSV_HEADERS, epochToDate, rowsToCsv, dedupe, extractRow, extractPage, findNextButton, waitForNextPage };
+  const BC = { COLUMNS, CSV_HEADERS, epochToDate, rowsToCsv, dedupe, extractRow, extractPage, findNextButton, waitForNextPage };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = BC;
   root.BC = BC;

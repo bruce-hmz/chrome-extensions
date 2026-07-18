@@ -62,8 +62,8 @@
     running = false;
   }
 
-  function downloadCsv(rows) {
-    const csv = BC.rowsToCsv(rows);
+  function downloadCsv(rows, columns) {
+    const csv = BC.rowsToCsv(rows, columns);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const d = new Date();
@@ -96,7 +96,7 @@
         cancelled = true;
         reply({ ok: true });
       } else if (msg.action === 'export') {
-        downloadCsv(Array.isArray(msg.rows) ? msg.rows : []);
+        downloadCsv(Array.isArray(msg.rows) ? msg.rows : [], msg.columns);
         reply({ ok: true });
       }
       return false;
