@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>Backlinks Collector</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="err" class="err hidden"></div>
+
+  <section id="idle" class="pane">
+    <h1>反向链接抓取</h1>
+    <label>范围
+      <select id="scope">
+        <option value="all">全部页（自动翻页）</option>
+        <option value="page">仅当前页</option>
+      </select>
+    </label>
+    <button id="start" class="primary">开始抓取</button>
+  </section>
+
+  <section id="running" class="pane hidden">
+    <div class="prog-track"><div id="prog-bar" class="prog-bar"></div></div>
+    <div id="prog-text" class="muted">准备中…</div>
+    <button id="cancel">取消</button>
+  </section>
+
+  <section id="results" class="pane hidden">
+    <div id="truncated" class="warn hidden"></div>
+    <div class="toolbar">
+      <label><input type="checkbox" id="select-all" checked> 全选</label>
+      <span id="count" class="muted"></span>
+      <button id="export" class="primary">导出 CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th></th><th>AS</th><th>源标题</th><th>源URL</th>
+          <th>锚文本</th><th>目标URL</th><th>首次</th><th>上次</th>
+        </tr></thead>
+        <tbody id="rows-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <script src="popup.js"></script>
+</body>
+</html>

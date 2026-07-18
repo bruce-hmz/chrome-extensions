@@ -1,0 +1,28 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0; width: 460px; max-height: 560px;
+  font: 13px/1.5 -apple-system, "Segoe UI", "PingFang SC", sans-serif;
+  color: #1f2329;
+}
+.hidden { display: none !important; }
+.pane { padding: 12px; }
+h1 { font-size: 15px; margin: 0 0 10px; }
+label { display: block; margin-bottom: 10px; }
+select { padding: 4px 6px; }
+button {
+  padding: 6px 12px; border: 1px solid #c4c7cf; border-radius: 6px;
+  background: #f5f6f8; cursor: pointer;
+}
+button.primary { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+.muted { color: #6c6e79; }
+.err { margin: 12px; padding: 8px; background: #fdecea; color: #b3261e; border-radius: 6px; }
+.warn { margin-bottom: 8px; padding: 6px 8px; background: #fef7e0; color: #b06000; border-radius: 6px; }
+.prog-track { height: 8px; background: #e8eaed; border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
+.prog-bar { height: 100%; width: 0; background: #1a73e8; transition: width .2s; }
+.toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.toolbar .muted { flex: 1; }
+.table-wrap { max-height: 440px; overflow: auto; border: 1px solid #e8eaed; border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 4px 6px; border-bottom: 1px solid #f0f1f3; text-align: left; white-space: nowrap; }
+td:nth-child(3), td:nth-child(5) { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+thead th { position: sticky; top: 0; background: #fafbfc; z-index: 1; }
