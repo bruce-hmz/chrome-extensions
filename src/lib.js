@@ -42,7 +42,7 @@
     const seen = new Set();
     const out = [];
     for (const r of rows) {
-      const k = (r.sourceUrl || '') + '\n' + (r.targetUrl || '');
+      const k = r.sourceUrl || '';
       if (seen.has(k)) continue;
       seen.add(k);
       out.push(r);

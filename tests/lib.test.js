@@ -39,9 +39,9 @@ describe('rowsToCsv', () => {
 });
 
 describe('dedupe', () => {
-  it('按 sourceUrl+targetUrl 去重，保留首个', () => {
+  it('按 sourceUrl 去重（同源不同目标也折叠），保留首个', () => {
     const a = { sourceUrl: 'u1', targetUrl: 't1', sourceTitle: 'a' };
-    const b = { sourceUrl: 'u1', targetUrl: 't1', sourceTitle: 'b' };
+    const b = { sourceUrl: 'u1', targetUrl: 't2', sourceTitle: 'b' }; // 同源、不同目标
     const c = { sourceUrl: 'u2', targetUrl: 't1', sourceTitle: 'c' };
     expect(BC.dedupe([a, b, c])).toEqual([a, c]);
   });
