@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const BC = require('../src/lib.js');
 
 describe('epochToDate', () => {
@@ -34,5 +36,46 @@ describe('dedupe', () => {
     const b = { sourceUrl: 'u1', targetUrl: 't1', sourceTitle: 'b' };
     const c = { sourceUrl: 'u2', targetUrl: 't1', sourceTitle: 'c' };
     expect(BC.dedupe([a, b, c])).toEqual([a, c]);
+  });
+});
+
+function loadFixture() {
+  document.body.innerHTML = fs.readFileSync(
+    path.join(__dirname, 'fixtures/page.html'), 'utf8',
+  );
+}
+
+describe('extractPage', () => {
+  it('抓全字段并处理边界', () => {
+    loadFixture();
+    const { rows, total } = BC.extractPage(document);
+    expect(total).toBe(200);
+    expect(rows.length).toBe(3);
+
+    expect(rows[0]).toEqual({
+      ascore: '32',
+      sourceTitle: 'お役立ちサイト一覧 - 何でも Wiki*',
+      sourceUrl: 'https://wikiwiki.jp/anythingwiki/x',
+      externalLinks: '619', internalLinks: '284',
+      anchor: 'Image To Pixel Art', targetUrl: 'https://pixelartvillage.com/',
+      firstSeen: '2026-02-16', lastSeen: '2026-04-09',
+    });
+
+    // 无标题重定向行
+    expect(rows[1].sourceTitle).toBe('');
+    expect(rows[1].sourceUrl).toBe('https://www.producthunt.com/r/ABC');
+    expect(rows[1].targetUrl).toBe('https://pixelartvillage.com/?ref=producthunt');
+    expect(rows[1].firstSeen).toBe('2026-04-01');
+
+    // 优先 target-url
+    expect(rows[2].targetUrl).toBe('https://pixelartvillage.com/');
+    expect(rows[2].anchor).toBe('imagetopixelart');
+  });
+
+  it('找不到表格返回空', () => {
+    document.body.innerHTML = '';
+    const { rows, total } = BC.extractPage(document);
+    expect(rows).toEqual([]);
+    expect(total).toBe(0);
   });
 });

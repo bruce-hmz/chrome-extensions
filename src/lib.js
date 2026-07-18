@@ -41,7 +41,49 @@
     return out;
   }
 
-  const BC = { CSV_HEADERS, epochToDate, rowsToCsv, dedupe };
+  function cellText(tr, name) {
+    const c = tr.querySelector('[name="' + name + '"]');
+    return c ? c.textContent.trim() : '';
+  }
+
+  function extractRow(tr) {
+    const sourceCell = tr.querySelector('[name="source"]');
+    const targetCell = tr.querySelector('[name="target"]');
+    const titleEl = sourceCell && sourceCell.querySelector('[data-test-source-title] span');
+    const sourceUrlEl = sourceCell && sourceCell.querySelector('[data-test-source-url]');
+    const anchorEl = targetCell && targetCell.querySelector('[data-test-anchor] span');
+    const targetUrlEl = targetCell && targetCell.querySelector('[data-test-target-url]');
+    const redirectUrlEl = targetCell && targetCell.querySelector('[data-test-redirect-url]');
+    const firstTs = tr.querySelector('[name="firstSeen"] [data-test-timestamp]');
+    const lastTs = tr.querySelector('[name="lastSeen"] [data-test-timestamp]');
+    return {
+      ascore: cellText(tr, 'ascore'),
+      sourceTitle: titleEl ? titleEl.textContent.trim() : '',
+      sourceUrl: sourceUrlEl ? sourceUrlEl.getAttribute('data-test-source-url') : '',
+      externalLinks: cellText(tr, 'externalLinks'),
+      internalLinks: cellText(tr, 'internalLinks'),
+      anchor: anchorEl ? anchorEl.textContent.trim() : '',
+      targetUrl: (targetUrlEl && targetUrlEl.getAttribute('data-test-target-url'))
+        || (redirectUrlEl && redirectUrlEl.getAttribute('data-test-redirect-url'))
+        || '',
+      firstSeen: epochToDate(firstTs ? firstTs.getAttribute('data-test-timestamp') : ''),
+      lastSeen: epochToDate(lastTs ? lastTs.getAttribute('data-test-timestamp') : ''),
+    };
+  }
+
+  function extractPage(root) {
+    const doc = root || (typeof document !== 'undefined' ? document : null);
+    if (!doc) return { rows: [], total: 0 };
+    const table = doc.querySelector('[data-test-table="backlinks"]')
+      || doc.querySelector('[data-path="backlinks.table"]');
+    if (!table) return { rows: [], total: 0 };
+    const rows = Array.from(table.querySelectorAll('[data-test-tbody-tr]')).map(extractRow);
+    const totalEl = doc.querySelector('[data-test-report-title-total]');
+    const total = totalEl ? parseInt(totalEl.textContent.trim(), 10) : rows.length;
+    return { rows, total: Number.isFinite(total) ? total : rows.length };
+  }
+
+  const BC = { CSV_HEADERS, epochToDate, rowsToCsv, dedupe, extractRow, extractPage };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = BC;
   root.BC = BC;

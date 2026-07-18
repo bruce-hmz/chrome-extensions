@@ -1,0 +1,56 @@
+<div data-ui-name="DataTable" data-test-table="backlinks" data-path="backlinks.table">
+  <span data-test-report-title-total="">200</span>
+  <div data-ui-name="DataTable.Body">
+
+    <!-- 行1：正常（标题+URL 齐全） -->
+    <div data-ui-name="Body.Row" data-test-tbody-tr="" role="row">
+      <div data-ui-name="Row.Cell" name="ascore" role="gridcell"><div><span data-ui-name="Text">32</span></div></div>
+      <div data-ui-name="Row.Cell" name="source" role="gridcell">
+        <div data-test-source-title=""><span>お役立ちサイト一覧 - 何でも Wiki*</span></div>
+        <a data-test-source-url="https://wikiwiki.jp/anythingwiki/x">wikiwiki.jp/anythingwiki/x</a>
+      </div>
+      <div data-ui-name="Row.Cell" name="externalLinks" role="gridcell"><div><span>619</span></div></div>
+      <div data-ui-name="Row.Cell" name="internalLinks" role="gridcell"><div><span>284</span></div></div>
+      <div data-ui-name="Row.Cell" name="target" role="gridcell">
+        <div data-test-anchor=""><span>Image To Pixel Art</span></div>
+        <a data-test-target-url="https://pixelartvillage.com/">pixelartvillage.com/</a>
+      </div>
+      <div data-ui-name="Row.Cell" name="firstSeen" role="gridcell"><span><span data-test-timestamp="1771250711">2026年2月16日</span></span></div>
+      <div data-ui-name="Row.Cell" name="lastSeen" role="gridcell"><span><span data-test-timestamp="1775685412">2026年4月9日</span></span></div>
+    </div>
+
+    <!-- 行2：无标题的重定向行（标题留空） -->
+    <div data-ui-name="Body.Row" data-test-tbody-tr="" role="row">
+      <div name="ascore" role="gridcell"><div><span>20</span></div></div>
+      <div name="source" role="gridcell">
+        <a data-test-source-url="https://www.producthunt.com/r/ABC">www.producthunt.com/r/ABC</a>
+      </div>
+      <div name="externalLinks" role="gridcell"><div><span>0</span></div></div>
+      <div name="internalLinks" role="gridcell"><div><span>0</span></div></div>
+      <div name="target" role="gridcell" data-test-nested-cell="">
+        <a data-test-target-url="https://pixelartvillage.com/?ref=producthunt">pixelartvillage.com/?ref=producthunt</a>
+      </div>
+      <div name="firstSeen" role="gridcell" data-test-nested-cell=""><span data-test-timestamp="1774980956">2026年4月1日</span></div>
+      <div name="lastSeen" role="gridcell" data-test-nested-cell=""><span data-test-timestamp="1780248386">2026年6月1日</span></div>
+    </div>
+
+    <!-- 行3：target 同时有 redirect-url 与 target-url（取 target-url） -->
+    <div data-ui-name="Body.Row" data-test-tbody-tr="" role="row">
+      <div name="ascore" role="gridcell"><div><span>13</span></div></div>
+      <div name="source" role="gridcell">
+        <div data-test-source-title=""><span>Retro Image Converters</span></div>
+        <a data-test-source-url="https://www.trendhunter.com/trends/image-to-pixel-art">trendhunter.com/...</a>
+      </div>
+      <div name="externalLinks" role="gridcell"><div><span>19</span></div></div>
+      <div name="internalLinks" role="gridcell"><div><span>55</span></div></div>
+      <div name="target" role="gridcell">
+        <div data-test-anchor=""><span>imagetopixelart</span></div>
+        <a data-test-redirect-url="https://imagetopixelart.com/?ref">imagetopixelart.com/?ref</a>
+        <a data-test-target-url="https://pixelartvillage.com/">pixelartvillage.com/</a>
+      </div>
+      <div name="firstSeen" role="gridcell"><span data-test-timestamp="1770996137">2026年2月13日</span></div>
+      <div name="lastSeen" role="gridcell"><span data-test-timestamp="1776545048">2026年4月19日</span></div>
+    </div>
+
+  </div>
+</div>
