@@ -16,23 +16,9 @@
     } catch (e) { /* popup 可能已关闭，忽略 */ }
   }
 
-  function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
-
   function nextButtonEnabled() {
     const btn = BC.findNextButton(document);
     return (btn && !btn.disabled && btn.getAttribute('aria-disabled') !== 'true') ? btn : null;
-  }
-
-  // 点击下一页后轮询：首行 sourceUrl 变化即视为新页就绪
-  async function waitForNextPage(prevFirstKey, timeoutMs) {
-    const start = Date.now();
-    while (Date.now() - start < timeoutMs) {
-      if (cancelled) return false;
-      await sleep(200);
-      const { rows } = BC.extractPage(document);
-      if (rows.length && rows[0].sourceUrl !== prevFirstKey) return true;
-    }
-    return false;
   }
 
   async function run(scope) {
@@ -63,7 +49,7 @@
 
       const prevFirstKey = rows.length ? rows[0].sourceUrl : '';
       btn.click();
-      const advanced = await waitForNextPage(prevFirstKey, 20000);
+      const advanced = await BC.waitForNextPage(prevFirstKey, 20000, () => cancelled);
       if (!advanced) {
         truncated = true;
         reason = cancelled ? '用户取消' : '翻页超时';
