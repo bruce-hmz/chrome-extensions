@@ -1,17 +1,23 @@
 'use strict';
 
 const el = (id) => document.getElementById(id);
+const BC = globalThis.BC;
+const COLUMNS = (BC && BC.COLUMNS) || [];
+const VALID_KEYS = COLUMNS.map((c) => c.key);
+
 const ui = {
   idle: el('idle'), running: el('running'), results: el('results'),
   err: el('err'), scope: el('scope'), start: el('start'), cancel: el('cancel'),
   progBar: el('prog-bar'), progText: el('prog-text'),
   truncated: el('truncated'), selectAll: el('select-all'),
   count: el('count'), exportBtn: el('export'), tbody: el('rows-body'),
+  thead: el('rows-head'),
 };
 
 let rowsState = [];
 let tabId = null;
 let injected = false;
+let colOrder = COLUMNS.map((c) => c.key);
 
 function show(name) {
   ['idle', 'running', 'results'].forEach((n) => ui[n].classList.toggle('hidden', n !== name));
@@ -19,6 +25,23 @@ function show(name) {
 function setError(msg) {
   ui.err.textContent = msg || '';
   ui.err.classList.toggle('hidden', !msg);
+}
+
+function orderedColumns() {
+  return colOrder.map((k) => COLUMNS.find((c) => c.key === k)).filter(Boolean);
+}
+
+async function loadColumnOrder() {
+  try {
+    const { columnOrder } = await chrome.storage.local.get('columnOrder');
+    if (Array.isArray(columnOrder) && columnOrder.length === VALID_KEYS.length
+        && VALID_KEYS.every((k) => columnOrder.includes(k))) {
+      colOrder = columnOrder.slice();
+    }
+  } catch (e) { /* storage 不可用则用默认顺序 */ }
+}
+function saveColumnOrder() {
+  try { chrome.storage.local.set({ columnOrder: colOrder }); } catch (e) {}
 }
 
 async function ensureInjected() {
@@ -44,31 +67,62 @@ function updateProgress(page, totalPages, accumulated) {
   ui.progText.textContent = '第 ' + page + ' / ' + totalPages + ' 页，已抓 ' + accumulated + ' 条';
 }
 
+// 抓取当前勾选状态(按行 idx)，重渲染表格后恢复，避免拖拽重排丢勾选。
+function captureSelection() {
+  const map = new Map();
+  ui.tbody.querySelectorAll('input[type=checkbox]').forEach((cb) => {
+    map.set(cb.dataset.idx, cb.checked);
+  });
+  return map;
+}
+
+function renderTable() {
+  const cols = orderedColumns();
+  // 表头：固定复选框列 + 可拖拽的各数据列
+  const htr = document.createElement('tr');
+  htr.appendChild(document.createElement('th'));
+  cols.forEach((c) => {
+    const th = document.createElement('th');
+    th.className = 'col-' + c.key;
+    th.draggable = true;
+    th.dataset.key = c.key;
+    th.title = '拖拽以重排列顺序';
+    th.textContent = c.label;
+    htr.appendChild(th);
+  });
+  ui.thead.replaceChildren(htr);
+
+  // 行：复选框 + 按当前列顺序的各字段
+  const prevSel = captureSelection();
+  const frag = document.createDocumentFragment();
+  rowsState.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    const tdC = document.createElement('td');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = prevSel.has(String(i)) ? prevSel.get(String(i)) : true;
+    cb.dataset.idx = String(i);
+    tdC.appendChild(cb);
+    tr.appendChild(tdC);
+    cols.forEach((c) => {
+      const td = document.createElement('td');
+      td.className = 'col-' + c.key;
+      td.textContent = r[c.key] == null ? '' : String(r[c.key]);
+      tr.appendChild(td);
+    });
+    frag.appendChild(tr);
+  });
+  ui.tbody.replaceChildren(frag);
+  refreshCount();
+}
+
 function renderResults(rows, truncated, reason) {
   setError('');
   rowsState = rows;
   ui.truncated.classList.toggle('hidden', !truncated);
   if (truncated) ui.truncated.textContent = '（提前结束：' + (reason || '未知原因') + '，未到最后一页）';
-
-  const frag = document.createDocumentFragment();
-  rows.forEach((r, i) => {
-    const tr = document.createElement('tr');
-    const tdC = document.createElement('td');
-    const cb = document.createElement('input');
-    cb.type = 'checkbox'; cb.checked = true; cb.dataset.idx = String(i);
-    tdC.appendChild(cb);
-    tr.appendChild(tdC);
-    [r.ascore, r.sourceTitle, r.sourceUrl, r.anchor, r.targetUrl, r.firstSeen, r.lastSeen]
-      .forEach((v) => {
-        const td = document.createElement('td');
-        td.textContent = v == null ? '' : String(v);
-        tr.appendChild(td);
-      });
-    frag.appendChild(tr);
-  });
-  ui.tbody.replaceChildren(frag);
   ui.selectAll.checked = true;
-  refreshCount();
+  renderTable();
   show('results');
 }
 
@@ -79,6 +133,33 @@ function refreshCount() {
   ui.selectAll.checked = boxes.length > 0 && checked.length === boxes.length;
   ui.selectAll.indeterminate = checked.length > 0 && checked.length < boxes.length;
 }
+
+// ---- 列拖拽重排（事件委托在 thead）----
+let dragKey = null;
+ui.thead.addEventListener('dragstart', (e) => {
+  const th = e.target.closest('th[data-key]');
+  if (!th) return;
+  dragKey = th.dataset.key;
+  try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragKey); } catch (x) {}
+});
+ui.thead.addEventListener('dragover', (e) => {
+  if (!dragKey) return;
+  if (e.target.closest('th[data-key]')) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+});
+ui.thead.addEventListener('drop', (e) => {
+  const th = e.target.closest('th[data-key]');
+  if (!th || !dragKey || dragKey === th.dataset.key) { dragKey = null; return; }
+  e.preventDefault();
+  const from = colOrder.indexOf(dragKey);
+  const to = colOrder.indexOf(th.dataset.key);
+  if (from < 0 || to < 0) { dragKey = null; return; }
+  colOrder.splice(from, 1);
+  colOrder.splice(to, 0, dragKey);
+  dragKey = null;
+  saveColumnOrder();
+  renderTable();
+});
+ui.thead.addEventListener('dragend', () => { dragKey = null; });
 
 ui.start.addEventListener('click', async () => {
   setError('');
@@ -106,7 +187,7 @@ ui.exportBtn.addEventListener('click', () => {
     .map((cb) => rowsState[Number(cb.dataset.idx)])
     .filter(Boolean);
   if (!picked.length) { setError('未选择任何行'); return; }
-  postToTab({ action: 'export', rows: picked });
+  postToTab({ action: 'export', rows: picked, columns: orderedColumns() });
 });
 
 chrome.runtime.onMessage.addListener((msg) => {
@@ -115,3 +196,5 @@ chrome.runtime.onMessage.addListener((msg) => {
   else if (msg.action === 'done') renderResults(msg.rows || [], !!msg.truncated, msg.reason);
   else if (msg.action === 'error') setError(msg.message);
 });
+
+loadColumnOrder();

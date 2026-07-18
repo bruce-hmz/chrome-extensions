@@ -24,5 +24,8 @@ button.primary { background: #1a73e8; color: #fff; border-color: #1a73e8; }
 .table-wrap { max-height: 440px; overflow: auto; border: 1px solid #e8eaed; border-radius: 6px; }
 table { border-collapse: collapse; width: 100%; }
 th, td { padding: 4px 6px; border-bottom: 1px solid #f0f1f3; text-align: left; white-space: nowrap; }
-td:nth-child(3), td:nth-child(5) { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+/* URL 列按 key 类截断（不依赖列位置，重排后仍生效） */
+.col-sourceUrl, .col-targetUrl { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
 thead th { position: sticky; top: 0; background: #fafbfc; z-index: 1; }
+thead th[data-key] { cursor: grab; user-select: none; }
+thead th[data-key]:active { cursor: grabbing; }

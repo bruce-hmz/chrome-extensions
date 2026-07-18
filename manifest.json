@@ -7,5 +7,5 @@
     "default_popup": "popup.html",
     "default_title": "Backlinks Collector"
   },
-  "permissions": ["activeTab", "scripting"]
+  "permissions": ["activeTab", "scripting", "storage"]
 }
