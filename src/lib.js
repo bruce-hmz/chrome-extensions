@@ -91,6 +91,9 @@
     const doc = root || (typeof document !== 'undefined' ? document : null);
     if (!doc) return null;
     const selectors = [
+      // Semrush/Intergalactal 命名属性约定（优先，最稳）
+      '[data-test-pagination-next-btn]',
+      '[data-ui-name="Pagination.NextPage"]',
       'button[aria-label*="next page" i]',
       'button[aria-label*="next" i]',
       'button[aria-label*="下一页"]',
