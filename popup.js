@@ -45,6 +45,7 @@ function updateProgress(page, totalPages, accumulated) {
 }
 
 function renderResults(rows, truncated, reason) {
+  setError('');
   rowsState = rows;
   ui.truncated.classList.toggle('hidden', !truncated);
   if (truncated) ui.truncated.textContent = '（提前结束：' + (reason || '未知原因') + '，未到最后一页）';
@@ -75,6 +76,8 @@ function refreshCount() {
   const boxes = ui.tbody.querySelectorAll('input[type=checkbox]');
   const checked = ui.tbody.querySelectorAll('input[type=checkbox]:checked');
   ui.count.textContent = '已选 ' + checked.length + ' / 共 ' + boxes.length + ' 条';
+  ui.selectAll.checked = boxes.length > 0 && checked.length === boxes.length;
+  ui.selectAll.indeterminate = checked.length > 0 && checked.length < boxes.length;
 }
 
 ui.start.addEventListener('click', async () => {

@@ -28,6 +28,14 @@ describe('rowsToCsv', () => {
     expect(lines[0]).toBe('"页面AS","源页面标题","源页面URL","外部链接","内部链接","锚文本","目标URL","首次发现","上次发现"');
     expect(lines[1]).toBe('"32","标,题""","http://x","1","2","a","http://y","2026-02-16","2026-04-09"');
   });
+
+  it('空数组只有 BOM + 表头一行', () => {
+    const csv = BC.rowsToCsv([]);
+    expect(csv.charCodeAt(0)).toBe(0xfeff);
+    const lines = csv.slice(1).split('\r\n');
+    expect(lines.length).toBe(1);
+    expect(lines[0]).toBe('"页面AS","源页面标题","源页面URL","外部链接","内部链接","锚文本","目标URL","首次发现","上次发现"');
+  });
 });
 
 describe('dedupe', () => {
@@ -36,6 +44,10 @@ describe('dedupe', () => {
     const b = { sourceUrl: 'u1', targetUrl: 't1', sourceTitle: 'b' };
     const c = { sourceUrl: 'u2', targetUrl: 't1', sourceTitle: 'c' };
     expect(BC.dedupe([a, b, c])).toEqual([a, c]);
+  });
+
+  it('空数组返回空数组', () => {
+    expect(BC.dedupe([])).toEqual([]);
   });
 });
 

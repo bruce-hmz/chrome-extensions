@@ -26,7 +26,7 @@
         r.internalLinks, r.anchor, r.targetUrl, r.firstSeen, r.lastSeen,
       ].map(csvCell).join(','));
     }
-    return '﻿' + lines.join('\r\n');
+    return '\uFEFF' + lines.join('\r\n');
   }
 
   function dedupe(rows) {
