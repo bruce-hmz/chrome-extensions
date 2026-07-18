@@ -18,4 +18,4 @@
 
 - 「下一页」按钮靠多策略选择器匹配（见 `src/lib.js` 的 `findNextButton`）。若某站点分页栏结构不同导致命中不了，需在 `selectors` 数组里补一条该站点的选择器。
 - 翻页超时上限 20 秒/页；超时即停，保留已抓部分。
-- 导出列固定 9 列、日期为 UTC YYYY-MM-DD。
+- 导出列固定 9 列、日期为 UTC+8（Asia/Shanghai）YYYY-MM-DD，与站点显示一致。
