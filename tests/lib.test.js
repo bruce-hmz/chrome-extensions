@@ -120,4 +120,22 @@ describe('findNextButton', () => {
     document.body.innerHTML = '<div></div>';
     expect(BC.findNextButton(document)).toBeNull();
   });
+
+  // 真实站点(Semrush 系)的 Next 按钮用「命名属性」data-test-pagination-next-btn，
+  // 而非 data-test="..."；旧的 [data-test*="paginat"] 选不到，会漏。
+  it('命中 Semrush data-test-pagination-next-btn 命名属性按钮', () => {
+    document.body.innerHTML = `
+      <button data-test-pagination-next-btn="" data-ui-name="Pagination.NextPage" type="button">
+        <span data-ui-name="Button.Text">Next</span>
+      </button>`;
+    const btn = BC.findNextButton(document);
+    expect(btn).toBeInstanceOf(HTMLButtonElement);
+    expect(btn.hasAttribute('data-test-pagination-next-btn')).toBe(true);
+  });
+
+  it('data-test-pagination-next-btn 为 aria-disabled 时不命中', () => {
+    document.body.innerHTML = `
+      <button data-test-pagination-next-btn="" aria-disabled="true">Next</button>`;
+    expect(BC.findNextButton(document)).toBeNull();
+  });
 });
