@@ -83,7 +83,32 @@
     return { rows, total: Number.isFinite(total) ? total : rows.length };
   }
 
-  const BC = { CSV_HEADERS, epochToDate, rowsToCsv, dedupe, extractRow, extractPage };
+  function isBtnEnabled(b) {
+    return !!b && !b.disabled && b.getAttribute('aria-disabled') !== 'true';
+  }
+
+  function findNextButton(root) {
+    const doc = root || (typeof document !== 'undefined' ? document : null);
+    if (!doc) return null;
+    const selectors = [
+      'button[aria-label*="next page" i]',
+      'button[aria-label*="next" i]',
+      'button[aria-label*="下一页"]',
+      '[data-test*="paginat" i][data-test*="next" i]',
+    ];
+    for (const sel of selectors) {
+      const hit = Array.from(doc.querySelectorAll(sel)).find(isBtnEnabled);
+      if (hit) return hit;
+    }
+    const nav = doc.querySelector('[role="navigation"]');
+    if (nav) {
+      const btns = Array.from(nav.querySelectorAll('button')).filter(isBtnEnabled);
+      if (btns.length) return btns[btns.length - 1];
+    }
+    return null;
+  }
+
+  const BC = { CSV_HEADERS, epochToDate, rowsToCsv, dedupe, extractRow, extractPage, findNextButton };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = BC;
   root.BC = BC;

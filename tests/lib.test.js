@@ -79,3 +79,33 @@ describe('extractPage', () => {
     expect(total).toBe(0);
   });
 });
+
+describe('findNextButton', () => {
+  it('按 aria-label 命中 enabled 下一页按钮', () => {
+    document.body.innerHTML = `
+      <div role="navigation">
+        <button aria-label="Previous page" disabled>‹</button>
+        <button aria-label="Page 1">1</button>
+        <button aria-label="Next page">›</button>
+      </div>`;
+    const btn = BC.findNextButton(document);
+    expect(btn).toBeInstanceOf(HTMLButtonElement);
+    expect(btn.getAttribute('aria-label')).toBe('Next page');
+  });
+
+  it('next 禁用时回退到 nav 内最后一个 enabled 按钮', () => {
+    document.body.innerHTML = `
+      <div role="navigation">
+        <button aria-label="Page 1">1</button>
+        <button aria-label="Page 2">2</button>
+        <button aria-label="Next page" aria-disabled="true">›</button>
+      </div>`;
+    const btn = BC.findNextButton(document);
+    expect(btn.textContent.trim()).toBe('2');
+  });
+
+  it('都没有返回 null', () => {
+    document.body.innerHTML = '<div></div>';
+    expect(BC.findNextButton(document)).toBeNull();
+  });
+});
