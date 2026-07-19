@@ -7,17 +7,26 @@ const VALID_KEYS = COLUMNS.map((c) => c.key);
 
 const ui = {
   idle: el('idle'), running: el('running'), results: el('results'),
-  err: el('err'), scope: el('scope'), start: el('start'), cancel: el('cancel'),
+  err: el('err'), start: el('start'), cancel: el('cancel'),
   progBar: el('prog-bar'), progText: el('prog-text'),
   truncated: el('truncated'), selectAll: el('select-all'),
   count: el('count'), exportBtn: el('export'), tbody: el('rows-body'),
-  thead: el('rows-head'),
+  thead: el('rows-head'), seg: el('scope-seg'),
 };
 
 let rowsState = [];
 let tabId = null;
 let injected = false;
 let colOrder = COLUMNS.map((c) => c.key);
+let scope = 'all';
+if (ui.seg) {
+  ui.seg.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-scope]');
+    if (!b) return;
+    scope = b.dataset.scope;
+    ui.seg.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+  });
+}
 
 function show(name) {
   ['idle', 'running', 'results'].forEach((n) => ui[n].classList.toggle('hidden', n !== name));
@@ -107,7 +116,14 @@ function renderTable() {
     cols.forEach((c) => {
       const td = document.createElement('td');
       td.className = 'col-' + c.key;
-      td.textContent = r[c.key] == null ? '' : String(r[c.key]);
+      if (c.key === 'ascore') {
+        const b = document.createElement('span');
+        b.className = 'as';
+        b.textContent = r[c.key] == null ? '' : String(r[c.key]);
+        td.appendChild(b);
+      } else {
+        td.textContent = r[c.key] == null ? '' : String(r[c.key]);
+      }
       tr.appendChild(td);
     });
     frag.appendChild(tr);
@@ -167,7 +183,7 @@ ui.start.addEventListener('click', async () => {
     await ensureInjected();
     show('running');
     updateProgress(0, 1, 0);
-    await postToTab({ action: 'start', scope: ui.scope.value });
+    await postToTab({ action: 'start', scope });
   } catch (e) {
     setError('启动失败：' + ((e && e.message) || e));
     show('idle');

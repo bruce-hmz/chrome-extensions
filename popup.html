@@ -6,31 +6,42 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
+  <header class="topbar">
+    <div class="mark"><svg viewBox="0 0 16 16" fill="none"><path d="M6.5 9.5a2.5 2.5 0 0 0 3.5 0l2-2a2.5 2.5 0 0 0-3.5-3.5l-1 1" stroke="#0d0e12" stroke-width="1.6" stroke-linecap="round"/><path d="M9.5 6.5a2.5 2.5 0 0 0-3.5 0l-2 2a2.5 2.5 0 0 0 3.5 3.5l1-1" stroke="#0d0e12" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+    <div class="word">Backlinks <span class="v">Collector</span></div>
+    <div class="spacer"></div>
+    <div class="dot" title="就绪"></div>
+  </header>
+
   <div id="err" class="err hidden"></div>
 
-  <section id="idle" class="pane">
-    <h1>反向链接抓取</h1>
-    <label>范围
-      <select id="scope">
-        <option value="all">全部页（自动翻页）</option>
-        <option value="page">仅当前页</option>
-      </select>
-    </label>
+  <section id="idle" class="pane compact">
+    <h1>抓取反向链接</h1>
+    <p class="sub">自动拆分标题 / URL · 翻页 · 勾选导出 CSV</p>
+    <div class="seg" id="scope-seg">
+      <button type="button" data-scope="all" class="on">全部页（自动翻页）</button>
+      <button type="button" data-scope="page">仅当前页</button>
+    </div>
     <button id="start" class="primary">开始抓取</button>
+    <div class="hint"><span class="kbd">⏱</span> 全部页每页约等 0.6s 确认加载完成</div>
   </section>
 
-  <section id="running" class="pane hidden">
+  <section id="running" class="pane compact hidden">
+    <h1>正在抓取</h1>
+    <p class="sub">自动翻页，逐页解析表格…</p>
     <div class="prog-track"><div id="prog-bar" class="prog-bar"></div></div>
-    <div id="prog-text" class="muted">准备中…</div>
-    <button id="cancel">取消</button>
+    <div class="prog-row">
+      <div id="prog-text">准备中…</div>
+      <button id="cancel" class="ghost">取消</button>
+    </div>
   </section>
 
   <section id="results" class="pane hidden">
     <div id="truncated" class="warn hidden"></div>
     <div class="toolbar">
       <label><input type="checkbox" id="select-all" checked> 全选</label>
-      <span id="count" class="muted"></span>
-      <button id="export" class="primary">导出 CSV</button>
+      <span id="count"></span>
+      <button id="export" class="primary sm">导出 CSV</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -38,6 +49,7 @@
         <tbody id="rows-body"></tbody>
       </table>
     </div>
+    <div class="hint"><span class="kbd">↔</span> 拖表头重排列 · 顺序自动记住</div>
   </section>
 
   <script src="src/lib.js"></script>
