@@ -17,6 +17,17 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
+
+/* ---------- 暗色滚动条（与仪表盘风格统一）---------- */
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--surface-2);
+  border: 2px solid var(--bg);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(190,242,76,0.45); }
+::-webkit-scrollbar-corner { background: transparent; }
 body {
   width: 720px; max-height: 600px;
   background: var(--bg); color: var(--text);
