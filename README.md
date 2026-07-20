@@ -1,22 +1,17 @@
-# Backlinks Collector
+# Chrome Extensions
 
-抓取「反向链接」表格的 Chrome 扩展：拆分源标题/URL、自动翻页、勾选后导出 CSV。
+Chrome 扩展插件库。每个子目录是一个独立、自包含的插件（各自的 `manifest.json`、源码与依赖）。
 
-## 安装
+## 插件列表
 
-1. 打开 Chrome → `chrome://extensions` → 打开右上角「开发者模式」。
-2. 点「加载已解压的扩展程序」→ 选本目录。
-3. 工具栏出现扩展图标。
+| 插件 | 说明 |
+| --- | --- |
+| [backlinks-collector](./backlinks-collector) | 抓取反向链接表格，拆分标题/URL，自动翻页，勾选导出 CSV |
 
-## 使用
+## 目录约定
 
-1. 打开反向链接分析页（含 `[data-test-table="backlinks"]` 表格）。
-2. 点扩展图标 → 选「全部页 / 仅当前页」→「开始抓取」。
-3. 抓取完成后按需勾选行 →「导出 CSV」。
-4. 拖拽结果表表头可重排列顺序，显示与 CSV 导出都按新顺序；顺序会记住，下次打开仍在（存于本地 `chrome.storage`）。
+- `<plugin-name>/manifest.json` — 插件清单（Manifest V3）
+- `<plugin-name>/README.md` — 该插件自身的说明
+- 源码、测试、依赖均在各自子目录内
 
-## 已知限制
-
-- 「下一页」按钮靠多策略选择器匹配（见 `src/lib.js` 的 `findNextButton`）。若某站点分页栏结构不同导致命中不了，需在 `selectors` 数组里补一条该站点的选择器。
-- 翻页超时上限 20 秒/页；超时即停，保留已抓部分。
-- 导出列固定 9 列、日期为 UTC+8（Asia/Shanghai）YYYY-MM-DD，与站点显示一致。
+进入对应子目录查看各插件的安装与使用方式。新增插件时，在本表追加一行即可。
