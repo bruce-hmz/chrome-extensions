@@ -51,6 +51,31 @@ describe('dedupe', () => {
   });
 });
 
+describe('defaultFilename', () => {
+  it('格式为 backlinks_YYYYMMDD-HHMM', () => {
+    expect(BC.defaultFilename()).toMatch(/^backlinks_\d{8}-\d{4}$/);
+  });
+});
+
+describe('sanitizeFilename', () => {
+  it('删 Windows 非法字符', () => {
+    expect(BC.sanitizeFilename('a/b\\c:d*e?f"g<h>i|j')).toBe('abcdefghij');
+  });
+  it('去掉用户误输的尾部 .csv', () => {
+    expect(BC.sanitizeFilename('report.csv')).toBe('report');
+  });
+  it('保留正常名与空格', () => {
+    expect(BC.sanitizeFilename('my report')).toBe('my report');
+  });
+  it('空串/空白回退默认名', () => {
+    expect(BC.sanitizeFilename('')).toMatch(/^backlinks_\d{8}-\d{4}$/);
+    expect(BC.sanitizeFilename('   ')).toMatch(/^backlinks_\d{8}-\d{4}$/);
+  });
+  it('清理后为空(只剩非法字符)回退默认名', () => {
+    expect(BC.sanitizeFilename('///')).toMatch(/^backlinks_\d{8}-\d{4}$/);
+  });
+});
+
 function loadFixture() {
   document.body.innerHTML = fs.readFileSync(
     path.join(__dirname, 'fixtures/page.html'), 'utf8',

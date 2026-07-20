@@ -38,6 +38,23 @@
     return '\uFEFF' + lines.join('\r\n');
   }
 
+  function pad2(n) { return String(n).padStart(2, '0'); }
+
+  // \u9ED8\u8BA4\u5BFC\u51FA\u6587\u4EF6\u540D(\u4E3B\u540D)\uFF1Abacklinks_YYYYMMDD-HHMM\uFF0CUTC+8 \u53E3\u5F84\u4E0E epochToDate \u4E00\u81F4
+  function defaultFilename() {
+    const d = new Date(Date.now() + 8 * 3600 * 1000);
+    return 'backlinks_' + d.getUTCFullYear() + pad2(d.getUTCMonth() + 1) + pad2(d.getUTCDate())
+      + '-' + pad2(d.getUTCHours()) + pad2(d.getUTCMinutes());
+  }
+
+  // \u6E05\u7406\u7528\u6237\u8F93\u5165\u7684\u6587\u4EF6\u540D(\u4E3B\u540D\uFF0C\u4E0D\u542B\u6269\u5C55\u540D)\uFF1A\u5220 Windows \u975E\u6CD5\u5B57\u7B26\u3001\u53BB\u5C3E\u90E8\u91CD\u590D .csv\uFF1B\u7A7A\u5219\u56DE\u9000\u9ED8\u8BA4\u540D\u3002
+  function sanitizeFilename(name) {
+    let s = String(name == null ? '' : name).trim();
+    if (!s) return defaultFilename();
+    s = s.replace(/[\\/:*?"<>|]+/g, '').trim().replace(/\.csv$/i, '');
+    return s || defaultFilename();
+  }
+
   function dedupe(rows) {
     const seen = new Set();
     const out = [];
@@ -151,7 +168,7 @@
     return false;
   }
 
-  const BC = { COLUMNS, CSV_HEADERS, epochToDate, rowsToCsv, dedupe, extractRow, extractPage, findNextButton, waitForNextPage };
+  const BC = { COLUMNS, CSV_HEADERS, epochToDate, rowsToCsv, defaultFilename, sanitizeFilename, dedupe, extractRow, extractPage, findNextButton, waitForNextPage };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = BC;
   root.BC = BC;

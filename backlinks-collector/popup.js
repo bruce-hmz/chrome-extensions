@@ -11,7 +11,7 @@ const ui = {
   progBar: el('prog-bar'), progText: el('prog-text'),
   truncated: el('truncated'), selectAll: el('select-all'),
   count: el('count'), exportBtn: el('export'), tbody: el('rows-body'),
-  thead: el('rows-head'), seg: el('scope-seg'),
+  thead: el('rows-head'), seg: el('scope-seg'), filename: el('filename'),
 };
 
 let rowsState = [];
@@ -138,6 +138,7 @@ function renderResults(rows, truncated, reason) {
   ui.truncated.classList.toggle('hidden', !truncated);
   if (truncated) ui.truncated.textContent = '（提前结束：' + (reason || '未知原因') + '，未到最后一页）';
   ui.selectAll.checked = true;
+  if (ui.filename) ui.filename.value = BC.defaultFilename();
   renderTable();
   show('results');
 }
@@ -203,7 +204,8 @@ ui.exportBtn.addEventListener('click', () => {
     .map((cb) => rowsState[Number(cb.dataset.idx)])
     .filter(Boolean);
   if (!picked.length) { setError('未选择任何行'); return; }
-  postToTab({ action: 'export', rows: picked, columns: orderedColumns() });
+  const filename = BC.sanitizeFilename(ui.filename ? ui.filename.value : '') + '.csv';
+  postToTab({ action: 'export', rows: picked, columns: orderedColumns(), filename });
 });
 
 chrome.runtime.onMessage.addListener((msg) => {

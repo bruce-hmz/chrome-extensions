@@ -62,17 +62,13 @@
     running = false;
   }
 
-  function downloadCsv(rows, columns) {
+  function downloadCsv(rows, columns, filename) {
     const csv = BC.rowsToCsv(rows, columns);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const d = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    const stamp = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate())
-      + '-' + pad(d.getHours()) + pad(d.getMinutes());
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'backlinks_' + stamp + '.csv';
+    a.download = filename || (BC.defaultFilename() + '.csv');
     document.documentElement.appendChild(a);
     a.click();
     a.remove();
@@ -96,7 +92,7 @@
         cancelled = true;
         reply({ ok: true });
       } else if (msg.action === 'export') {
-        downloadCsv(Array.isArray(msg.rows) ? msg.rows : [], msg.columns);
+        downloadCsv(Array.isArray(msg.rows) ? msg.rows : [], msg.columns, msg.filename);
         reply({ ok: true });
       }
       return false;
