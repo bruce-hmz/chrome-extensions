@@ -12,11 +12,13 @@ const ui = {
   truncated: el('truncated'), selectAll: el('select-all'),
   count: el('count'), exportBtn: el('export'), tbody: el('rows-body'),
   thead: el('rows-head'), seg: el('scope-seg'), filename: el('filename'),
+  closePanel: el('close-panel'), newTask: el('new-task'),
 };
 
 let rowsState = [];
 let tabId = null;
 let injected = false;
+let scraping = false; // 是否正在抓取（running 面板期间），用于阻止导航事件误重置翻页
 let colOrder = COLUMNS.map((c) => c.key);
 let scope = 'all';
 if (ui.seg) {
@@ -34,6 +36,23 @@ function show(name) {
 function setError(msg) {
   ui.err.textContent = msg || '';
   ui.err.classList.toggle('hidden', !msg);
+}
+
+// side panel 常驻：切到别的标签或当前标签导航到新地址时，旧抓取结果已失效，
+// 把面板重置回 idle 并清空旧 tab 注入缓存，避免误展示上一个地址的结果。
+// scraping=true 期间不重置（翻页会触发虚假导航/URL 变化，不能打断正在进行的抓取）。
+function resetToIdle() {
+  if (scraping) return;
+  rowsState = [];
+  injected = false;
+  tabId = null;
+  setError('');
+  show('idle');
+}
+
+async function syncActiveTab() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (tab && tab.id !== tabId) resetToIdle();
 }
 
 function orderedColumns() {
@@ -54,10 +73,26 @@ function saveColumnOrder() {
 }
 
 async function ensureInjected() {
-  if (injected) return;
+  // 常驻面板里 tabId/injected 会被旧值污染，每次都重新确认当前活动标签。
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab) throw new Error('没有活动标签页');
-  tabId = tab.id;
+  if (tab.id !== tabId) {
+    tabId = tab.id;
+    injected = false; // 新标签，重新注入 content script
+  }
+  if (injected) return;
+
+  // side panel 常驻后 activeTab 不再生效（点工具栏图标打开的是面板，
+  // 不是针对标签页的手势）。改用 optional_host_permissions：首次"开始抓取"时，
+  // 在点击手势内请求一次"所有站点"权限，授权后任意页面都可注入，不再重复弹窗。
+  // 注意：不能读 tab.url 来按站点授权——没 host 权限时 tab.url 是 undefined，
+  // 且读 URL 本身就需要权限，形成死结。故直接请求 <all_urls>，最稳。
+  const granted = await chrome.permissions.contains({ origins: ['<all_urls>'] });
+  if (!granted) {
+    const ok = await chrome.permissions.request({ origins: ['<all_urls>'] });
+    if (!ok) throw new Error('未授权访问该页面');
+  }
+
   await chrome.scripting.executeScript({
     target: { tabId },
     files: ['src/lib.js', 'src/content.js'],
@@ -66,14 +101,15 @@ async function ensureInjected() {
 }
 
 function postToTab(msg) {
-  if (tabId == null) return Promise.resolve();
+  if (tabId == null) return Promise.resolve(null);
   return chrome.tabs.sendMessage(tabId, msg);
 }
 
 function updateProgress(page, totalPages, accumulated) {
   const pct = totalPages ? Math.min(100, Math.round((page / totalPages) * 100)) : 0;
   ui.progBar.style.width = pct + '%';
-  ui.progText.textContent = '第 ' + page + ' / ' + totalPages + ' 页，已抓 ' + accumulated + ' 条';
+  const pageStr = totalPages ? ('第 ' + page + ' / ' + totalPages + ' 页') : ('第 ' + page + ' 页');
+  ui.progText.textContent = pageStr + '，已抓 ' + accumulated + ' 条';
 }
 
 // 抓取当前勾选状态(按行 idx)，重渲染表格后恢复，避免拖拽重排丢勾选。
@@ -182,16 +218,39 @@ ui.start.addEventListener('click', async () => {
   setError('');
   try {
     await ensureInjected();
+    // 先硬重置 content script，确保无幽灵进程把旧 done 发回来覆盖新结果
+    await postToTab({ action: 'reset' });
+    scraping = true;
     show('running');
     updateProgress(0, 1, 0);
-    await postToTab({ action: 'start', scope });
+    console.log('[BC-popup] 发送 start, scope', scope, 'tabId', tabId);
+    const res = await postToTab({ action: 'start', scope });
+    if (res && res.ok === false) throw new Error(res.error || '启动被拒');
   } catch (e) {
+    scraping = false;
     setError('启动失败：' + ((e && e.message) || e));
     show('idle');
   }
 });
 
 ui.cancel.addEventListener('click', () => postToTab({ action: 'cancel' }));
+
+// 新任务：放弃当前结果，回 idle 准备抓另一个地址。
+// SPA 切换报告不一定触发导航事件，results 面板会卡住，故提供这个显式入口。
+if (ui.newTask) {
+  ui.newTask.addEventListener('click', () => {
+    // 若上一轮抓取还在后台跑，先取消，避免它的 done/error 之后再覆盖新任务界面
+    postToTab({ action: 'cancel' });
+    scraping = false;
+    resetToIdle();
+  });
+}
+
+// 关闭侧边面板：side panel API 无 close() 方法，window.close() 是官方认可方式。
+// 关闭后下次点工具栏图标可重新打开（background.js 配置了 openPanelOnActionClick）。
+if (ui.closePanel) {
+  ui.closePanel.addEventListener('click', () => window.close());
+}
 
 ui.selectAll.addEventListener('change', () => {
   ui.tbody.querySelectorAll('input[type=checkbox]').forEach((cb) => { cb.checked = ui.selectAll.checked; });
@@ -208,11 +267,26 @@ ui.exportBtn.addEventListener('click', () => {
   postToTab({ action: 'export', rows: picked, columns: orderedColumns(), filename });
 });
 
-chrome.runtime.onMessage.addListener((msg) => {
+chrome.runtime.onMessage.addListener((msg, sender) => {
   if (!msg || !msg.action) return;
-  if (msg.action === 'progress') updateProgress(msg.page, msg.totalPages, msg.accumulated);
-  else if (msg.action === 'done') renderResults(msg.rows || [], !!msg.truncated, msg.reason);
-  else if (msg.action === 'error') setError(msg.message);
+  // 仅接受当前关联标签的消息，防止旧标签后台抓取结果串扰新标签显示
+  if (sender.tab && sender.tab.id !== tabId) return;
+  if (msg.action === 'progress') {
+    updateProgress(msg.page, msg.totalPages, msg.accumulated);
+  } else if (msg.action === 'done') {
+    scraping = false;
+    renderResults(msg.rows || [], !!msg.truncated, msg.reason);
+  } else if (msg.action === 'error') {
+    scraping = false;
+    setError(msg.message);
+  }
+});
+
+// 监听标签切换 / 当前标签真实导航：旧结果失效则重置回 idle。
+// resetToIdle 内部会在 scraping=true 时跳过，故 SPA 翻页/客户端路由不会被误打断。
+chrome.tabs.onActivated.addListener(() => syncActiveTab());
+chrome.tabs.onUpdated.addListener((_id, info, tab) => {
+  if (tab && tab.active && (info.status === 'loading' || info.url)) resetToIdle();
 });
 
 loadColumnOrder();

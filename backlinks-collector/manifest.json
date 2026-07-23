@@ -4,8 +4,14 @@
   "version": "0.1.0",
   "description": "抓取反向链接表格,拆分标题/URL,自动翻页,勾选导出 CSV。",
   "action": {
-    "default_popup": "popup.html",
     "default_title": "Backlinks Collector"
   },
-  "permissions": ["activeTab", "scripting", "storage"]
+  "side_panel": {
+    "default_path": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["activeTab", "scripting", "storage", "sidePanel"],
+  "optional_host_permissions": ["<all_urls>"]
 }
